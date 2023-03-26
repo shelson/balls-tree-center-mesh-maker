@@ -1,0 +1,19 @@
+version: "3.10"
+services:
+  makeMeACenterBallMan:
+    image: ghcr.io/shelson/balls-tree-center-mesh-maker@sha256:96d10e8c4c0df2cb71e5f3aaccf945dbcbdcee5c10b20f8dccdce45829efbfca
+    container_name: makeMeACenterBallMan-py3.10 # e.g. function-python3.9
+    platform: linux/amd64
+    environment:
+      - FUNCTIONS_WORKER_RUNTIME=python
+      - AZURE_FUNCTIONS_ENVIRONMENT=Development
+      - FUNCTIONS_EXTENSION_VERSION=4
+      - NO_PROXY=localhost,127.0.0.1
+      - AzureFunctionsJobHost__Logging__Console__IsEnabled=true
+      - ENABLE_ORYX_BUILD=true
+      - SCM_DO_BUILD_DURING_DEPLOYMENT=true
+    ports:
+      - "2022:22"
+      - 30003:80
+    volumes:
+      - /Users/simon/Code/balls-tree-center-mesh-maker:/home/site/wwwroot
