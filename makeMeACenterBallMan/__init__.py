@@ -69,6 +69,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
 
         resp = func.HttpResponse(json.dumps({"objdata": objdata}), \
             mimetype="application/json",
+            headers={"Access-Control-Allow-Origin": "*"},
             status_code=200)
         return resp
     else:
