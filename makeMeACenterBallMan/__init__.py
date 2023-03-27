@@ -80,7 +80,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                 with open(f.name, "r") as f2:
                     objdata = f2.read()
 
-            resp = func.HttpResponse(json.dumps({"objdata": objdata}), \
+            resp = func.HttpResponse(json.dumps({"status": "ok", "objdata": objdata}), \
                 mimetype="application/json",
                 headers={"Access-Control-Allow-Origin": "*",
                          "Access-Control-Allow-Headers": "Content-Type",
@@ -88,10 +88,10 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                 status_code=200)
             return resp
         else:
-            resp = func.HttpResponse("This HTTP triggered function executed successfully. Send me a POST body next time for amazing magic.",
+            resp = func.HttpResponse(json.dumps({"status": "error", "message": "This HTTP triggered function executed successfully. Send me a POST body next time for amazing magic."}),
                 mimetype="application/json",
                 headers={"Access-Control-Allow-Origin": "*",
                          "Access-Control-Allow-Headers": "Content-Type",
                          "Access-Control-Allow-Methods": "POST,OPTIONS"},
-                status_code=200)
+                status_code=400)
             return resp
