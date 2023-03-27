@@ -7,7 +7,7 @@ import tempfile
 
 import azure.functions as func
 
-def get_cylinder_positions(moon_pos, com=False):
+def get_cylinder_positions(moon_pos, depth, com=False):
     # first normalise the moon position
     moon_pos_norm = moon_pos / np.linalg.norm(moon_pos)
     print("Moon pos norm: {}".format(moon_pos_norm))
@@ -16,8 +16,9 @@ def get_cylinder_positions(moon_pos, com=False):
         inner_offset = 45
         outer_offset = 60
     else:
-        inner_offset = 30
         outer_offset = 55
+        inner_offset = outer_offset - (depth + 5)
+        
 
     cylinder_inner_point = moon_pos_norm * inner_offset
     logging.info("cylinder_inner_point: {}".format(cylinder_inner_point))
@@ -60,15 +61,24 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             sphere = pymesh.generate_icosphere(50, np.array([0.0,0.0,0.0]), 6)
 
             for moon in moons:
-                (cylinder_inner_point, cylinder_outer_point) = get_cylinder_positions(moon)
+                (cylinder_inner_point, cylinder_outer_point) = get_cylinder_positions(moon, 20)
                 cylinder= pymesh.generate_cylinder(cylinder_inner_point, cylinder_outer_point, 10.25 / 2 , 10.25 / 2, num_segments=64)
 
                 sphere = pymesh.boolean(sphere, cylinder,
                                     operation="difference",
                                     engine="igl")
+                
+                logging.info(np.linalg.norm(moon))
+                if np.linalg.norm(moon) > 400:
+                    (cylinder_inner_point, cylinder_outer_point) = get_cylinder_positions(moon, 0.5)
+                    cylinder= pymesh.generate_cylinder(cylinder_inner_point, cylinder_outer_point, 20 , 20, num_segments=4)    
+
+                    sphere = pymesh.boolean(sphere, cylinder,
+                                    operation="difference",
+                                    engine="igl")
 
             # deal with the com
-            (cylinder_inner_point, cylinder_outer_point) = get_cylinder_positions(com, com=True)
+            (cylinder_inner_point, cylinder_outer_point) = get_cylinder_positions(com, 15, com=True)
             cylinder = pymesh.generate_cylinder(cylinder_inner_point, cylinder_outer_point, 50 , 50, num_segments=64)
 
             sphere = pymesh.boolean(sphere, cylinder,
