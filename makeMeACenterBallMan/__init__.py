@@ -41,48 +41,57 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             status_code=200)
         return resp
     
-    moon_data = None
-
-    try:
-        req_body = req.get_json()
-    except ValueError:
-        pass
     else:
-        moon_data = req_body.get('moon_data')
-        logging.info("Got moon data: {}".format(moon_data))
+        moon_data = None
 
-    if moon_data != None:
-        moons = [np.array(moon) for moon in moon_data.get('moons')]
-        com = np.array(moon_data.get('com'))
+        try:
+            req_body = req.get_json()
+        except ValueError:
+            pass
+        else:
+            logging.info("Got a POST request")
+            moon_data = req_body.get('moon_data')
+            logging.info("Got moon data: {}".format(moon_data))
 
-        sphere = pymesh.generate_icosphere(50, np.array([0.0,0.0,0.0]), 6)
+        if moon_data != None:
+            moons = [np.array(moon) for moon in moon_data.get('moons')]
+            com = np.array(moon_data.get('com'))
 
-        for moon in moons:
-            (cylinder_inner_point, cylinder_outer_point) = get_cylinder_positions(moon)
-            cylinder= pymesh.generate_cylinder(cylinder_inner_point, cylinder_outer_point, 10.25 / 2 , 10.25 / 2, num_segments=64)
+            sphere = pymesh.generate_icosphere(50, np.array([0.0,0.0,0.0]), 6)
+
+            for moon in moons:
+                (cylinder_inner_point, cylinder_outer_point) = get_cylinder_positions(moon)
+                cylinder= pymesh.generate_cylinder(cylinder_inner_point, cylinder_outer_point, 10.25 / 2 , 10.25 / 2, num_segments=64)
+
+                sphere = pymesh.boolean(sphere, cylinder,
+                                    operation="difference",
+                                    engine="igl")
+
+            # deal with the com
+            (cylinder_inner_point, cylinder_outer_point) = get_cylinder_positions(com, com=True)
+            cylinder = pymesh.generate_cylinder(cylinder_inner_point, cylinder_outer_point, 50 , 50, num_segments=64)
 
             sphere = pymesh.boolean(sphere, cylinder,
-                                operation="difference",
-                                engine="igl")
+                                    operation="difference",
+                                    engine="igl")
+            
+            with tempfile.NamedTemporaryFile(suffix=".obj") as f:
+                pymesh.save_mesh(f.name, sphere, ascii=True)
+                with open(f.name, "r") as f2:
+                    objdata = f2.read()
 
-        # deal with the com
-        (cylinder_inner_point, cylinder_outer_point) = get_cylinder_positions(com, com=True)
-        cylinder = pymesh.generate_cylinder(cylinder_inner_point, cylinder_outer_point, 50 , 50, num_segments=64)
-
-        sphere = pymesh.boolean(sphere, cylinder,
-                                operation="difference",
-                                engine="igl")
-        
-        with tempfile.NamedTemporaryFile(suffix=".obj") as f:
-            pymesh.save_mesh(f.name, sphere, ascii=True)
-            with open(f.name, "r") as f2:
-                objdata = f2.read()
-
-        resp = func.HttpResponse(json.dumps({"objdata": objdata}), \
-            mimetype="application/json",
-            headers={"Access-Control-Allow-Origin": "*"},
-            status_code=200)
-        return resp
-    else:
-        return func.HttpResponse(
-             "This HTTP triggered function executed successfully. Send me a POST body next time for amazing magic.")
+            resp = func.HttpResponse(json.dumps({"objdata": objdata}), \
+                mimetype="application/json",
+                headers={"Access-Control-Allow-Origin": "*",
+                         "Access-Control-Allow-Headers": "Content-Type",
+                         "Access-Control-Allow-Methods": "POST,OPTIONS"},
+                status_code=200)
+            return resp
+        else:
+            resp = func.HttpResponse("This HTTP triggered function executed successfully. Send me a POST body next time for amazing magic.",
+                mimetype="application/json",
+                headers={"Access-Control-Allow-Origin": "*",
+                         "Access-Control-Allow-Headers": "Content-Type",
+                         "Access-Control-Allow-Methods": "POST,OPTIONS"},
+                status_code=200)
+            return resp
