@@ -30,6 +30,17 @@ def get_cylinder_positions(moon_pos, com=False):
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')
+
+    if req.method == "OPTIONS":
+        logging.info("Got an OPTIONS request")
+        resp = func.HttpResponse("", \
+            mimetype="application/json",
+            headers={"Access-Control-Allow-Origin": "*",
+                     "Access-Control-Allow-Headers": "Content-Type",
+                     "Access-Control-Allow-Methods": "POST,OPTIONS"},
+            status_code=200)
+        return resp
+    
     moon_data = None
 
     try:
