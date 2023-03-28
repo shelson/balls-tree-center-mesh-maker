@@ -55,12 +55,13 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
             logging.info("Got moon data: {}".format(moon_data))
 
         if moon_data != None:
-            moons = [np.array(moon) for moon in moon_data.get('moons')]
+            moons = [np.array(moon["position"]) for moon in moon_data.get('moons')]
+            masses = [moon["mass"] for moon in moon_data.get('moons')]
             com = np.array(moon_data.get('com'))
 
             sphere = pymesh.generate_icosphere(50, np.array([0.0,0.0,0.0]), 6)
 
-            for moon in moons:
+            for i, moon in enumerate(moons):
                 (cylinder_inner_point, cylinder_outer_point) = get_cylinder_positions(moon, 20)
                 cylinder= pymesh.generate_cylinder(cylinder_inner_point, cylinder_outer_point, 10.25 / 2 , 10.25 / 2, num_segments=64)
 
@@ -74,6 +75,15 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
                     cylinder= pymesh.generate_cylinder(cylinder_inner_point, cylinder_outer_point, 20 , 20, num_segments=4)    
 
                     sphere = pymesh.boolean(sphere, cylinder,
+                                    operation="difference",
+                                    engine="igl")
+                    
+                # make a ring
+                if masses[i] > 600:
+                    (cylinder_inner_point, cylinder_outer_point) = get_cylinder_positions(moon, 1.5)
+                    ring = pymesh.generate_tube(cylinder_inner_point, cylinder_outer_point, 9, 9, 8.5, 8.5, num_segments=64)
+
+                    sphere = pymesh.boolean(sphere, ring,
                                     operation="difference",
                                     engine="igl")
 
